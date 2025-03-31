@@ -1,0 +1,115 @@
+#include <stdio.h>
+#include <string.h>
+
+typedef struct Sinhvien {
+    char id[10];
+    char ten[50];
+    int Ns;
+    char lop[60];
+    char diachi[50];
+    float diem;
+} Sinhvien;
+
+void Nhap(Sinhvien sv[], int n) {
+    for (int i = 0; i < n; i++) {
+        printf("Nhap sinh vien thu %d \n", i + 1);
+        printf("MSVV: ");
+        scanf("%s", sv[i].id);
+        getchar();
+        printf("Ten: ");
+        scanf(" %[^\n]", sv[i].ten);
+        printf("Nam sinh: ");
+        scanf("%d", &sv[i].Ns);
+        printf("Lop: ");
+        scanf(" %[^\n]", sv[i].lop);
+        printf("Dia chi: ");
+        scanf(" %[^\n]", sv[i].diachi);
+        printf("Diem: ");
+        scanf("%f", &sv[i].diem);
+    }
+}
+
+void Xuat(Sinhvien sv[], int n) {
+    printf("\n%-5s %-15s %-25s %-10s %-10s %-8s %-20s\n", "STT", "MSV", "Ho Ten", "Nam Sinh", "Lop", "DTB", "Dia Chi");
+    printf("---------------------------------------------------------------------------------------\n");
+    for (int i = 0; i < n; i++) {
+        printf("%-5d %-15s %-25s %-10d %-10s %-8.2f %-20s\n", i + 1, sv[i].id, sv[i].ten, sv[i].Ns, sv[i].lop, sv[i].diem, sv[i].diachi);
+    }
+}
+void ghifile(char *filename,Sinhvien sv[],int n){
+	FILE *file=fopen(filename,"w");
+	if(!file){
+		printf("khong the mo file");
+		return ;
+	}
+	for(int i=0;i<n;i++){
+		fprintf(file,"%d %s %s %d %s %f %s\n", i + 1, sv[i].id, sv[i].ten, sv[i].Ns, sv[i].lop, sv[i].diem, sv[i].diachi);	
+	}
+	fclose(file);
+}
+
+
+
+
+
+void Theoten(Sinhvien sv[],int n){
+	Sinhvien temp;
+	for(int i=0;i<n;i++){
+		for(int j=i+1;j<n;j++){
+			if(strcmp(sv[i].ten,sv[j].ten)>0){
+				temp=sv[i];
+				sv[i]=sv[j];
+				sv[j]=temp;
+			}
+		}
+	}
+}
+void theoDiem(Sinhvien sv[],int n){
+	Sinhvien temp;
+	for(int i=0;i<n;i++){
+		for(int j=i+1;j<n;j++){
+			if(sv[i].diem < sv[j].diem){
+				temp=sv[i];
+				sv[i]=sv[j];
+				sv[j]=temp;
+			}
+		}
+   }
+}
+int HocLai(Sinhvien sv[],int n,Sinhvien dshl[]){
+	int found=0;
+	for(int i=0;i<n;i++){
+		if(sv[i].diem<4.0){
+			dshl[found ++]=sv[i];
+		}
+	}
+	return found ;
+}
+
+
+int main() {
+    int n,soLuonghoclai;
+    printf("Nhap so luong sinh vien: ");
+    scanf("%d", &n);
+    Sinhvien sv[n];
+    Sinhvien dshl[n];
+    Nhap(sv, n);
+    Xuat(sv, n);
+    ghifile("SinhVien.txt",sv, n);
+
+    Theoten(sv, n);
+    printf("\nDanh sach sap xep theo ten:\n");
+    Xuat(sv, n);
+
+    theoDiem(sv, n);
+    printf("\nDanh sach sap xep theo diem:\n");
+    Xuat(sv, n);
+    ghifile("SapxepDTB.txt", sv, n);
+    
+    soLuonghoclai=HocLai(sv,n,dshl);
+    ghifile("HocLai.txt", dshl, soLuonghoclai);
+    printf("\nDanh sach sinh vien hoc lai:\n");
+    Xuat(dshl,soLuonghoclai);
+    
+    return 0;
+}
