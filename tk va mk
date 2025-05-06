@@ -1,0 +1,156 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <termios.h>
+
+#define MAX_ATTEMPTS 3
+#define FILENAME "user_data.txt"
+
+// Hàm tắt/bật chế độ hiển thị ký tự trên terminal
+void toggle_echo(int enable) {
+    struct termios term;
+    tcgetattr(fileno(stdin), &term);
+    if (!enable) {
+        term.c_lflag &= ~ECHO;
+    } else {
+        term.c_lflag |= ECHO;
+    }
+    tcsetattr(fileno(stdin), TCSANOW, &term);
+}
+
+// Hàm kiểm tra tính hợp lệ của tên đăng nhập
+int is_valid_username(const char *username) {
+    return strlen(username) >= 5;
+}
+
+// Hàm kiểm tra tính hợp lệ của mật khẩu
+int is_valid_password(const char *password) {
+    int has_upper = 0, has_lower = 0, has_digit = 0;
+    if (strlen(password) < 8) return 0;
+    for (int i = 0; password[i] != '\0'; i++) {
+        if (isupper(password[i])) has_upper = 1;
+        if (islower(password[i])) has_lower = 1;
+        if (isdigit(password[i])) has_digit = 1;
+    }
+    return has_upper && has_lower && has_digit;
+}
+
+// Hàm đăng ký người dùng mới
+void register_user() {
+    char username[50], password[50], confirm_password[50];
+    FILE *file;
+
+    printf("=== Đăng ký ===\n");
+    do {
+        printf("Nhập tên đăng nhập (ít nhất 5 ký tự): ");
+        scanf("%s", username);
+        if (!is_valid_username(username)) {
+            printf("Tên đăng nhập không hợp lệ. Hãy thử lại.\n");
+        }
+    } while (!is_valid_username(username));
+
+    do {
+        printf("Nhập mật khẩu (ít nhất 8 ký tự, phải có chữ hoa, chữ thường và số): ");
+        toggle_echo(0); // Ẩn mật khẩu
+        scanf("%s", password);
+        toggle_echo(1); // Hiện lại
+        printf("\n");
+        if (!is_valid_password(password)) {
+            printf("Mật khẩu không hợp lệ. Hãy thử lại.\n");
+            continue;
+        }
+
+        printf("Xác nhận mật khẩu: ");
+        toggle_echo(0); // Ẩn mật khẩu
+        scanf("%s", confirm_password);
+        toggle_echo(1); // Hiện lại
+        printf("\n");
+
+        if (strcmp(password, confirm_password) != 0) {
+            printf("Mật khẩu xác nhận không khớp. Hãy thử lại.\n");
+        } else {
+            break;
+        }
+    } while (1);
+
+    // Lưu tên đăng nhập và mật khẩu vào tập tin
+    file = fopen(FILENAME, "w");
+    if (file == NULL) {
+        printf("Không thể mở tập tin để lưu.\n");
+        return;
+    }
+    fprintf(file, "%s %s\n", username, password);
+    fclose(file);
+
+    printf("Đăng ký thành công!\n");
+}
+
+// Hàm đăng nhập
+void login() {
+    char username[50], password[50], stored_username[50], stored_password[50];
+    FILE *file;
+    int attempts = 0;
+
+    printf("=== Đăng nhập ===\n");
+
+    // Đọc thông tin từ tập tin
+    file = fopen(FILENAME, "r");
+    if (file == NULL) {
+        printf("Không tìm thấy tài khoản. Vui lòng đăng ký trước.\n");
+        return;
+    }
+    fscanf(file, "%s %s", stored_username, stored_password);
+    fclose(file);
+
+    while (attempts < MAX_ATTEMPTS) {
+        printf("Nhập tên đăng nhập: ");
+        scanf("%s", username);
+
+        printf("Nhập mật khẩu: ");
+        toggle_echo(0); // Ẩn mật khẩu
+        scanf("%s", password);
+        toggle_echo(1); // Hiện lại
+        printf("\n");
+
+        if (strcmp(username, stored_username) == 0 && strcmp(password, stored_password) == 0) {
+            printf("Đăng nhập thành công!\n");
+            return;
+        } else {
+            printf("Tên đăng nhập hoặc mật khẩu không đúng. Hãy thử lại.\n");
+        }
+        attempts++;
+    }
+
+    printf("Bạn đã nhập sai quá số lần cho phép.\n");
+}
+
+// Hàm chính
+int main() {
+    int choice;
+
+    do {
+        printf("=== Hệ thống đăng nhập ===\n");
+        printf("1. Đăng ký\n");
+        printf("2. Đăng nhập\n");
+        printf("3. Thoát\n");
+        printf("Lựa chọn của bạn: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                register_user();
+                break;
+            case 2:
+                login();
+                break;
+            case 3:
+                printf("Tạm biệt!\n");
+                break;
+            default:
+                printf("Lựa chọn không hợp lệ. Hãy thử lại.\n");
+        }
+    } while (choice != 3);
+
+    return 0;
+}
